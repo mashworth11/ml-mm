@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Script for processing MATLAB data and some data viz.
+Script for processing MATLAB data, applying polynomial regression and visualisation
+of single-step ahead training and multi-step ahead testing. 
 """
 import pandas as pd
 import numpy as np
@@ -106,14 +107,16 @@ X_te = X_test.drop(['time', 'dt^(n+1)', 'p_i', 'p_m', 'target', 'p^(n-2)', 'p^(n
 X_te = X_te.reindex(['diff_p^(n-2)', 'dp^(n-1)', 'diff_p^(n-1)', 'dp^(n)', 'diff_p^(n)'], axis=1)
 poly = PolynomialFeatures(2, include_bias = False).fit(X_tr)
 
-## scalers
-sc_x = StandardScaler()
-X_tr_scaled = sc_x.fit_transform(X_tr)
-X_te_scaled = sc_x.transform(X_te)
-sc_y = StandardScaler()
-y_tr_scaled = sc_y.fit_transform(y_train.to_numpy().reshape((-1,1)))
-y_te_scaled = sc_y.transform(y_test.to_numpy().reshape((-1,1)))
-scaler = {'sc_x':sc_x, 'sc_y':sc_y}
+# =============================================================================
+# ## scalers
+# sc_x = StandardScaler()
+# X_tr_scaled = sc_x.fit_transform(X_tr)
+# X_te_scaled = sc_x.transform(X_te)
+# sc_y = StandardScaler()
+# y_tr_scaled = sc_y.fit_transform(y_train.to_numpy().reshape((-1,1)))
+# y_te_scaled = sc_y.transform(y_test.to_numpy().reshape((-1,1)))
+# scaler = {'sc_x':sc_x, 'sc_y':sc_y}
+# =============================================================================
 
 ## poly features
 X_tr_poly = pd.DataFrame(poly.transform(X_tr), columns = poly.get_feature_names(X_tr.columns))
