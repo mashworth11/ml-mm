@@ -63,7 +63,7 @@ class D_creator:
         self.time_step()
         self.pressure_seq()
         self.data_set['target'] = (self.base_data['p_m']-self.data_set['p^(n)'])/self.data_set['dt^(n+1)']
-        # exogenous vars.
+        # internal vars.
         for i in range(self.d_u):
             if i == 0:
                 self.data_set['diff_p^(n)'] = self.P_f - self.data_set['p^(n)']
@@ -71,7 +71,7 @@ class D_creator:
                 in_seq = self.data_set['diff_p^(n)'].to_numpy().reshape((-1, self.N))
                 out_seq = np.zeros(self.data_set.shape[0]).reshape((-1, self.N))
                 self.data_set[f'diff_p^(n-{i})'] = self.seq_shifter(in_seq, out_seq, i)
-        # endogenous vars.   
+        # external vars.   
         in_seq = self.data_set['target'].to_numpy().reshape((-1, self.N))
         out_seq = np.zeros(self.data_set.shape[0]).reshape((-1, self.N))
         for i in range(self.d_y):
@@ -90,7 +90,6 @@ class D_creator:
             in_seq - 2D numpy array of sequences to be shifted
             out_seq - 2D numpy array that will have added shifted sequences
             shift_by - lagging parameter
-            
         Returns:
             out_seq - 1D array of shifted sequences, ready to be added to pandas column
         """
@@ -131,13 +130,16 @@ def msa_inner_loop(model, x_init, time_step, N, poly = None, scaler = None):
         if poly != None and scaler != None:
             sc_input_ = scaler['sc_x'].transform(input_)
             sc_input_ = poly.transform(sc_input_)
-            p[j] = scaler['sc_y'].inverse_transform(model.predict(sc_input_))
+            p[j] = scaler['sc_y'].inverse_transform(model.predict(sc_input_))          
         elif scaler != None:
             sc_input_ = scaler['sc_x'].transform(input_)
             p[j] = (scaler['sc_y'].inverse_transform(model.predict(sc_input_).reshape(1,-1))).ravel()
         else:
-            input_ = poly.transform(input_)
-            p[j] = model.predict(input_)
+            try:
+                input_ = poly.transform(input_)
+                p[j] = model.predict(input_)
+            except ValueError:
+                break
         #import pdb; pdb.set_trace()        
         x_i[0] = x_i[2] # diff_p^(n-2) <- diff_p^(n-1)
         x_i[1] = x_i[3] # dp^(n-1) <- dp^(n)

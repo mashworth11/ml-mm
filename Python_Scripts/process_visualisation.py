@@ -51,19 +51,17 @@ fig, ax = plt.subplots(figsize=(12, 7))
 start = 80000; stop = 81000;
 for i in range(K-80):
     data = data_set['target'].iloc[start:stop].to_numpy()
-    ax.loglog(times, data, color = 'k',  marker = 'x', markersize = 5, alpha = 0.2)
+    ax.loglog(times, data, color = 'k', alpha = 0.5, linewidth = 1)
     start += N; stop += N
 ax.set_xlim([1E-1, 100]);  
 ax.set_xlabel('Time (s)', fontsize = 12); 
-ax.set_ylim([1E0, 1E6]);
+ax.set_ylim([1E2, 1E6]);
 ax.set_ylabel(r'$\Delta\overline{p}_m/\Delta t$ (Pa$\cdot$s$^{-1})$', fontsize = 12)
-# =============================================================================
-# ax.axis('off')
-# ax.tick_params(labelsize=9)
-# fig.tight_layout(pad=0)
-# ax.figure.set_size_inches(5/2.54,4.5/2.54)
-# plt.savefig('full_data.png', dpi = 600)
-# =============================================================================
+ax.axis('off')
+ax.tick_params(labelsize=9)
+fig.tight_layout(pad=0)
+ax.figure.set_size_inches(5.5/2.54, 5.5/2.54)
+plt.savefig('full_data.png', dpi = 600)
 
 # visualisation - train/test split
 blue = (0.1294, 0.4000, 0.6745)
@@ -72,30 +70,28 @@ fig, ax = plt.subplots(figsize=(12, 7))
 start = 0; stop = N
 for i in range(K_train):
     ax.loglog(times, X_train['target'].iloc[start:stop], color = blue, 
-              marker = 'x', markersize = 4, alpha = 0.5)
+              linewidth = 1, alpha = 0.7)
     start += N; stop += N
-train_targets =  mlines.Line2D([], [], color = blue, marker='x', alpha = 0.5,
-                              markersize=4, label='Train')
+train_targets =  mlines.Line2D([], [], color = blue, alpha = 0.7,
+                              linewidth = 0.6, label='Train')
 
 start = 0; stop = N
 for i in range(K_test):
     ax.loglog(times, X_test['target'].iloc[start:stop], color = red, 
-              fillstyle = 'none', marker = 'o', markersize = 4, alpha = 0.5)
+              linewidth = 1, linestyle = '--', alpha = 0.7)
     start += N; stop += N
-test_targets =  mlines.Line2D([], [], color = red, marker='o', alpha = 0.5,
-                              fillstyle = 'none', markersize=4, label='Test')
+test_targets =  mlines.Line2D([], [], color = red, alpha = 0.7,
+                              linewidth = 0.6, linestyle = '--', label='Test')
 ax.set_xlim([min(times), 100])
 ax.set_xlabel('Time (s)', fontsize = 12)
-ax.set_ylim([10E0, 1E6])
+ax.set_ylim([10E1, 1E6])
 ax.set_ylabel('Pressure (Pa)', fontsize = 12)
 ax.tick_params(labelsize=14)
-ax.legend(handles=[train_targets, test_targets], fontsize = 12, loc = 'upper right')
-# =============================================================================
-# ax.axis('off')
-# fig.tight_layout(pad=0)
-# ax.figure.set_size_inches(11/2.54,11/2.54)
-# plt.savefig('train_test_data.png', dpi = 600)
-# =============================================================================
+ax.legend(handles=[train_targets, test_targets], fontsize = 8, loc = 'upper right')
+ax.axis('off')
+fig.tight_layout(pad=0)
+ax.figure.set_size_inches(5.5/2.54, 5.5/2.54)
+plt.savefig('train_test_data.png', dpi = 600)
 
 
 #%% Train, test one-step ahead mode - Linear regression
@@ -150,37 +146,37 @@ print(f'MSA RMSE: {RMSE_msa}')
 #%% Visualise results
 # training: one-step ahead
 fig, ax = plt.subplots(figsize=(12, 7))
-ax.set_title('Training: SSA', fontsize=14)
+#ax.set_title('Training: SSA', fontsize=14)
 start = 0; stop = N
 for i in range(K_train):
     ax.loglog(times, X_train['target'].iloc[start:stop], color = 'k', 
-              marker = 'x', markersize = 4, alpha = 0.5)
+              alpha = 0.5, linewidth = 1)
     start += N; stop += N
-train_targets =  mlines.Line2D([], [], color='k', marker='x', alpha = 0.5,
-                          markersize=4, label='Target')
+train_targets =  mlines.Line2D([], [], color='k', alpha = 0.5, linewidth = 1, 
+                            label='Target')
 start = 0; stop = N
 for i in range(K_train):
-    ax.loglog(times, dp_tr[start:stop], color = blue, marker = 'o', 
-              fillstyle = 'none', markersize = 4, alpha = 0.4)
+    ax.loglog(times, dp_tr[start:stop], color = blue, alpha = 0.7, linewidth = 1, 
+               linestyle = '--')
     start += N; stop += N
-prediction =  mlines.Line2D([], [], color = blue, marker='o', alpha = 0.4, 
-                            fillstyle = 'none', markersize=4, label='Prediction')
+prediction =  mlines.Line2D([], [], color = blue, alpha = 0.7, linewidth = 1, 
+                            linestyle = '--', label='Prediction')
 ax.set_xlim([min(times), 100])
 ax.set_xlabel('Time (s)', fontsize = 12)
-ax.set_ylim([10E0, 1E6])
+ax.set_ylim([10E1, 1E6])
 ax.set_ylabel('Pressure (Pa)', fontsize = 12)
 ax.tick_params(labelsize=14)
-ax.legend(handles=[train_targets, prediction], fontsize = 12, loc = 'lower left')
+ax.legend(handles=[train_targets, prediction], fontsize = 8, loc = 'upper right')
 # =============================================================================
 # ax.axis('off')
 # fig.tight_layout(pad=0)
-# ax.figure.set_size_inches(5/2.54,4.5/2.54)
-# plt.savefig('training_ssp.png', dpi = 600)
+# ax.figure.set_size_inches(5.5/2.54, 5.5/2.54)
+# plt.savefig('train_pr.png', dpi = 600)
 # =============================================================================
 
 # testing: one-step ahead
 fig, ax = plt.subplots(figsize=(12, 7))
-ax.set_title('Testing: SSA', fontsize=14)
+#ax.set_title('Testing: SSA', fontsize=14)
 start = 0; stop = N
 for i in range(K_test):
     ax.loglog(times, X_test['target'].iloc[start:stop], color = 'k', 
@@ -204,30 +200,30 @@ ax.legend(handles=[test_targets, prediction])
 
 # testing: multi-step ahead
 fig, ax = plt.subplots(figsize=(12, 7))
-ax.set_title('Testing: MSA', fontsize=14)
+#ax.set_title('Testing: MSA', fontsize=14)
 start = 0; stop = N
 for i in range(K_test):
     ax.loglog(times, X_test['target'].iloc[start:stop], color = 'k', 
-              marker = 'x', markersize = 4, alpha = 0.6)
+              alpha = 0.5, linewidth = 1)
     start += N; stop += N
-test_targets =  mlines.Line2D([], [], color='k', marker='x', alpha = 0.6,
-                          markersize=4, label='Target')
+test_targets =  mlines.Line2D([], [], color='k', alpha = 0.5, linewidth = 1, 
+                             label='Target')
 start = 0; stop = N
 for i in range(K_test):
-    ax.loglog(times, dp_msa[start:stop], color = red, marker = 'o', 
-              fillstyle = 'none', markersize = 4, alpha = 0.4)
+    ax.loglog(times, dp_msa[start:stop], color = red, linewidth = 1, 
+                            linestyle = '--', alpha = 0.7)
     start += N; stop += N
-prediction =  mlines.Line2D([], [], color = red, marker='o', alpha = 0.4, 
-                            fillstyle = 'none', markersize=4, label='Prediction')
+prediction =  mlines.Line2D([], [], color = red, alpha = 0.7, linewidth = 1, 
+                            linestyle = '--', label='Prediction')
 ax.set_xlim([min(times), 100])
 ax.set_xlabel('Time (s)', fontsize = 12)
-ax.set_ylim([10E0, 1E6])
+ax.set_ylim([10E1, 1E6])
 ax.set_ylabel('Pressure (Pa)', fontsize = 12)
 ax.tick_params(labelsize=14)
-ax.legend(handles=[test_targets, prediction], fontsize = 12, loc = 'lower left')
+ax.legend(handles=[test_targets, prediction], fontsize = 8, loc = 'upper right')
 # =============================================================================
 # ax.axis('off')
 # fig.tight_layout(pad=0)
-# ax.figure.set_size_inches(5/2.54,4.5/2.54)
-# plt.savefig('testing_msp.png', dpi = 600)
+# ax.figure.set_size_inches(5.5/2.54, 5.5/2.54)
+# plt.savefig('test_pr.png', dpi = 600)
 # =============================================================================

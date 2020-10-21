@@ -6,6 +6,8 @@ Script for testing neural net for the ML-based multiscale modelling data.
 import pandas as pd
 import numpy as np
 import numpy.matlib
+import matplotlib.pyplot as plt
+import matplotlib.lines as mlines
 from Utilities import D_creator
 from Utilities import msa_outer_loop
 from sklearn.metrics import mean_squared_error
@@ -59,7 +61,7 @@ def build_nn_model():
     model.compile(loss='mean_squared_error', optimizer=opt)
     return model
 
-nn_model = KerasRegressor(build_fn = build_nn_model, batch_size = 64, epochs = 100)
+nn_model = KerasRegressor(build_fn = build_nn_model, batch_size = 64, epochs = 200)
 
 
 #%% Train, test in single-step ahead mode
@@ -93,4 +95,67 @@ dp_nn_msa = msa_outer_loop(nn_model, init_test_inputs, 0.1, N, scaler = scaler)
 RMSE_nn_msa = np.sqrt(mean_squared_error(y_test, dp_nn_msa))
 print(f'neurel net MSA RMSE: {RMSE_nn_msa}')
 
+
+#%% Visualise results
+blue = (0.1294, 0.4000, 0.6745)
+red = (0.6980, 0.0941, 0.1686)
+# training: one-step ahead
+fig, ax = plt.subplots(figsize=(12, 7))
+#ax.set_title('Training: SSA', fontsize=14)
+start = 0; stop = N
+for i in range(K_train):
+    ax.loglog(times, X_train['target'].iloc[start:stop], color = 'k', 
+              alpha = 0.5, linewidth = 1)
+    start += N; stop += N
+train_targets =  mlines.Line2D([], [], color='k', alpha = 0.5, linewidth = 1, 
+                            label='Target')
+start = 0; stop = N
+for i in range(K_train):
+    ax.loglog(times, dp_nn_tr[start:stop], color = blue, alpha = 0.7, linewidth = 1, 
+               linestyle = '--')
+    start += N; stop += N
+prediction =  mlines.Line2D([], [], color = blue, alpha = 0.7, linewidth = 1, 
+                            linestyle = '--', label='Prediction')
+ax.set_xlim([min(times), 100])
+ax.set_xlabel('Time (s)', fontsize = 12)
+ax.set_ylim([10E1, 1E6])
+ax.set_ylabel('Pressure (Pa)', fontsize = 12)
+ax.tick_params(labelsize=14)
+ax.legend(handles=[train_targets, prediction], fontsize = 8, loc = 'upper right')
+# =============================================================================
+# ax.axis('off')
+# fig.tight_layout(pad=0)
+# ax.figure.set_size_inches(5.5/2.54, 5.5/2.54)
+# plt.savefig('train_nn.png', dpi = 600)
+# =============================================================================
+
+# testing: multi-step ahead
+fig, ax = plt.subplots(figsize=(12, 7))
+#ax.set_title('Testing: MSA', fontsize=14)
+start = 0; stop = N
+for i in range(K_test):
+    ax.loglog(times, X_test['target'].iloc[start:stop], color = 'k', 
+              alpha = 0.5, linewidth = 1)
+    start += N; stop += N
+test_targets =  mlines.Line2D([], [], color='k', alpha = 0.5, linewidth = 1, 
+                             label='Target')
+start = 0; stop = N
+for i in range(K_test):
+    ax.loglog(times, dp_nn_msa[start:stop], color = red, linewidth = 1, 
+                            linestyle = '--', alpha = 0.7)
+    start += N; stop += N
+prediction =  mlines.Line2D([], [], color = red, alpha = 0.7, linewidth = 1, 
+                            linestyle = '--', label='Prediction')
+ax.set_xlim([min(times), 100])
+ax.set_xlabel('Time (s)', fontsize = 12)
+ax.set_ylim([10E1, 1E6])
+ax.set_ylabel('Pressure (Pa)', fontsize = 12)
+ax.tick_params(labelsize=14)
+ax.legend(handles=[test_targets, prediction], fontsize = 8, loc = 'upper right')
+# =============================================================================
+# ax.axis('off')
+# fig.tight_layout(pad=0)
+# ax.figure.set_size_inches(5.5/2.54, 5.5/2.54)
+# plt.savefig('test_nn.png', dpi = 600)
+# =============================================================================
 
