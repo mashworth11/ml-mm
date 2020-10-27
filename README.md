@@ -1,4 +1,4 @@
-# Machine learning-enhanced multiscale modelling
+# Machine learning-based multiscale constitutive modelling
 
 **Authors**: Mark Ashworth, Ahmed Elsheikh, Florian Doster
 * Framework for sequential multiscale modelling using machine learning (ML) models to bridge between scales.
