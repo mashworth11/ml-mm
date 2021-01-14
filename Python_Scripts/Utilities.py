@@ -13,10 +13,14 @@ class D_creator:
     Class used to create data set, D, used for (autoregressive) training and 
     testing based on the data coming from the analytical solution generated in 
     MATLAB. 
+    
+    NOTE, there are some methods here not used in the final implementation,
+    but were designed for experimentation. 
+    
     Input:
         base_data - data coming from analytical solution
-        d_y - number of endogenous sequence terms
-        d_u - number of exogenous sequence terms
+        d_y - number of internal sequence terms
+        d_u - number of external sequence terms
         P_f - boundary pressure 
     Returns:
         data_set object containing (autoregressive) features and target for 
@@ -46,13 +50,18 @@ class D_creator:
         """
         Method to compute lagged pressure steps.
         """
-        in_seq = self.base_data['p_m'].to_numpy().reshape((-1, self.N))
-        out_seq = self.data_set['p_i'].to_numpy().reshape((-1, self.N))
+        in_seq_m = self.base_data['p_m'].to_numpy().reshape((-1, self.N))
+        out_seq_m = self.data_set['p_i'].to_numpy().reshape((-1, self.N))
+        in_seq_f = np.ones(in_seq_m.shape)*1E6
+        out_seq_f = self.data_set['p_i'].to_numpy().reshape((-1, self.N))
+        
         for i in range(self.d_y+1):
             if i == 0:
-                self.data_set['p^(n)'] = self.seq_shifter(in_seq, out_seq, i+1)
+                self.data_set['p^(n)'] = self.seq_shifter(in_seq_m, out_seq_m, i+1)
+                self.data_set['p_f^(n)'] = in_seq_f.ravel()
             else:
-                self.data_set[f'p^(n-{i})'] = self.seq_shifter(in_seq, out_seq, i+1)
+                self.data_set[f'p^(n-{i})'] = self.seq_shifter(in_seq_m, out_seq_m, i+1)
+                self.data_set[f'p_f^(n-{i})'] = self.seq_shifter(in_seq_f, out_seq_f, i)
         return
                 
     def update_D(self):
@@ -93,18 +102,19 @@ class D_creator:
         Returns:
             out_seq - 1D array of shifted sequences, ready to be added to pandas column
         """
-        in_seq = in_seq[:,0:(-shift_by)]
-        out_seq = np.concatenate((out_seq[:,0:shift_by], in_seq), axis=1)
+        in_seq = in_seq[:, 0:(-shift_by)]
+        out_seq = np.concatenate((out_seq[:, 0:shift_by], in_seq), axis=1)
         return out_seq.ravel()
     
     def D_4_MATLAB(self):
         """
         Method to prepare data_set for use in MATLAB.
         """
-        MATLAB_D = self.data_set.drop(['time', 'dt^(n+1)', 'p^(n-2)', 'p^(n-1)', 
-                                       'p^(n)'], axis = 1)
-        MATLAB_D = MATLAB_D.reindex(['p_i', 'p_m', 'diff_p^(n-2)', 'dp^(n-1)', 
-                                     'diff_p^(n-1)', 'dp^(n)', 'diff_p^(n)', 'target'], 
+        MATLAB_D = self.data_set[self.data_set.columns[self.data_set.columns.isin(
+                                ['p_i', 'p_f^(n-2)', 'p_f^(n-1)', 'p_f^(n)', 
+                                 'p^(n-2)', 'p^(n-1)', 'p^(n)', 'target'])]]
+        MATLAB_D = MATLAB_D.reindex(['p_i', 'p_f^(n-2)', 'p^(n-2)', 'p_f^(n-1)', 
+                                     'p^(n-1)', 'p_f^(n)', 'p^(n)', 'target'], 
                                     axis = 1)
         return MATLAB_D
                     
@@ -122,15 +132,16 @@ def msa_inner_loop(model, x_init, time_step, N, poly = None, scaler = None):
         scaler - scaler object   
     Returns: 
         p - array of multi-step ahead predictions for a single starting point
-    """
+    """ 
     x_i = x_init.copy()
     p = np.zeros(N)
     for j in range(N):
         input_ = x_i.reshape(1,-1)
         if poly != None and scaler != None:
+            #import pdb; pdb.set_trace() 
             sc_input_ = scaler['sc_x'].transform(input_)
             sc_input_ = poly.transform(sc_input_)
-            p[j] = scaler['sc_y'].inverse_transform(model.predict(sc_input_))          
+            p[j] = scaler['sc_y'].inverse_transform(model.predict(sc_input_))  
         elif scaler != None:
             sc_input_ = scaler['sc_x'].transform(input_)
             p[j] = (scaler['sc_y'].inverse_transform(model.predict(sc_input_).reshape(1,-1))).ravel()
@@ -140,12 +151,10 @@ def msa_inner_loop(model, x_init, time_step, N, poly = None, scaler = None):
                 p[j] = model.predict(input_)
             except ValueError:
                 break
-        #import pdb; pdb.set_trace()        
-        x_i[0] = x_i[2] # diff_p^(n-2) <- diff_p^(n-1)
-        x_i[1] = x_i[3] # dp^(n-1) <- dp^(n)
-        x_i[2] = x_i[4] # diff_p^(n-1) <- diff_p^(n)
-        x_i[3] = p[j] # dp^(n) <- dp^(n+1)
-        x_i[4] = x_i[4] - p[j]*time_step # diff_p^(n) <- diff_p^(n+1)
+        #import pdb; pdb.set_trace() 
+        #x_i = np.concatenate((x_i[1:], np.array([1E6-p[j]]))) # diff pressures
+        #x_i = np.concatenate((x_i[1:], np.array([p[j]]))) # only pressure
+        x_i = np.concatenate((x_i[2:], np.array([1E6, p[j]]))) # with fracture pressure
     return p
 
 
