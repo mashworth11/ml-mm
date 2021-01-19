@@ -19,8 +19,8 @@ from sklearn.preprocessing import StandardScaler
 
 
 #%% Import and process data
-base_data = pd.read_csv('../Data/diffusionData.csv')
-data_obj = D_creator(base_data, 2, 3, 1E6)
+base_data = pd.read_csv('../Data/diffusionData2D.csv')
+data_obj = D_creator(base_data, 2, 0, 1E6)
 data_set = data_obj.data_set
 data_set['target'] = data_set['p_m']
 target = data_set['target']
@@ -64,10 +64,8 @@ nn_model = KerasRegressor(build_fn = build_nn_model, batch_size = 128, epochs = 
 
 
 #%% Train, test in single-step ahead mode
-X_tr = X_train.drop(['p_i', 'time', 'dt^(n+1)', 'target'], axis = 1)
-X_tr = X_tr.reindex(['p_f^(n-2)', 'p^(n-2)', 'p_f^(n-1)', 'p^(n-1)', 'p_f^(n)', 'p^(n)'], axis=1)
-X_te = X_test.drop(['p_i', 'time', 'dt^(n+1)', 'target'], axis = 1)
-X_te = X_te.reindex(['p_f^(n-2)', 'p^(n-2)', 'p_f^(n-1)', 'p^(n-1)', 'p_f^(n)', 'p^(n)'], axis=1)
+X_tr = X_train.reindex(['p_f^(n-2)', 'p^(n-2)', 'p_f^(n-1)', 'p^(n-1)', 'p_f^(n)', 'p^(n)'], axis=1)
+X_te = X_test.reindex(['p_f^(n-2)', 'p^(n-2)', 'p_f^(n-1)', 'p^(n-1)', 'p_f^(n)', 'p^(n)'], axis=1)
 
 # scalers
 sc_x = StandardScaler()
@@ -91,7 +89,7 @@ print(f'Train neurel net SSA RMSE: {RMSE_nn_tr}, Test neurel net RMSE: {RMSE_nn_
 #%% Test multi-step ahead mode
 init_test_inputs = X_te[['p_f^(n-2)', 'p^(n-2)', 'p_f^(n-1)', 'p^(n-1)', 'p_f^(n)', 'p^(n)']].to_numpy()
 init_test_inputs = init_test_inputs[0::N]
-p_nn_msa = msa_outer_loop(nn_model, init_test_inputs, 0.1, N, scaler = scaler)
+p_nn_msa = msa_outer_loop(nn_model, init_test_inputs, N, scaler = scaler)
 RMSE_nn_msa = np.sqrt(mean_squared_error(y_test, p_nn_msa))
 print(f'neurel net MSA RMSE: {RMSE_nn_msa}')
 

@@ -167,25 +167,14 @@ transfer_model = model.transfer_model_object;
 if isa(model.dd_transfer_object, 'DataDrivenTransfer')
     dd_object = model.dd_transfer_object;
     in = dd_object.ML_inputs;
-    % 0 is the current time level, n, and 1 is the previous time level, n-1, etc.   
-    % Prediction
-    Talpha = dd_object.calculate_trans_term(in.diff_p2, in.dp1, in.diff_p1, in.dp0, in.diff_p0);
-    Talpha = Talpha.*model.rock_matrix.poro.*1.4E-9; % 1.4E-9 is the total compressibility
-%     % Experimental switch option: Reverts back to linear transfer if we are 
-%     % below a certain tolerance
-%      if isprop(transfer_model, 'shape_factor_object')
-%          m_temp.pm = pm0;
-%          f_temp.pf = p0;
-%          Talpha_lt = transfer_model.calculate_transfer(model,f_temp,m_temp);
-%          if abs(Talpha-Talpha_lt) <= 1E-6
-%              Talpha = transfer_model.calculate_transfer(model,fracture_fields,matrix_fields);
-%          end
-%      end
-else
+    % 0 is the current time level, n, and 1 is the previous time level, n-1, etc. 
+        p_m = dd_object.calculate_trans_term(in.p_f2, in.p_m2, in.p_f1, in.p_m1, in.p_f0, in.p_m0);
+        Talpha = ((p_m-pm0)/dt)*model.rock_matrix.poro.*dd_object.compressibility_factor; 
+        Tw = double(vb.*Talpha);
+else % standard transfer 
     Talpha = transfer_model.calculate_transfer(model,fracture_fields,matrix_fields);
+    Tw = double(vb.*Talpha);
 end
-
-Tw = double(vb.*Talpha);
 
 % EQUATIONS ---------------------------------------------------------------
 names = {'water','water_matrix'};

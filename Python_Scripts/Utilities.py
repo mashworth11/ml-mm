@@ -120,13 +120,12 @@ class D_creator:
                     
         
 #%% Multi-step ahead prediction functions        
-def msa_inner_loop(model, x_init, time_step, N, poly = None, scaler = None):
+def msa_inner_loop(model, x_init, N, poly = None, scaler = None):
     """
     Function to perform inner loop of the multi-step ahead prediction.
     Inputs:
         model  - trained model type e.g. neural net, polynomial regression etc.
         x_init - single intitial input
-        time_step - discrete step
         N - number of steps
         poly - polynomial transformer object
         scaler - scaler object   
@@ -158,13 +157,12 @@ def msa_inner_loop(model, x_init, time_step, N, poly = None, scaler = None):
     return p
 
 
-def msa_outer_loop(model, X_init, time_step, no_steps, poly = None, scaler = None):
+def msa_outer_loop(model, X_init, no_steps, poly = None, scaler = None):
     """
     Function to run outer loop of the multi-step ahead prediction given.  
     Inputs:
         model  - trained model type e.g. neural net, polynomial regression etc.
         X_init - array of initial inputs
-        time_step - discrete step
         no_steps - number of steps
         poly - polynomial transformer object
         scaler - scaler object       
@@ -175,7 +173,7 @@ def msa_outer_loop(model, X_init, time_step, no_steps, poly = None, scaler = Non
     predictions = np.array([])
     n = 0 
     for x_init in X_init:
-        predictions = np.append(predictions, msa_inner_loop(model, x_init, time_step, N, poly, scaler))
+        predictions = np.append(predictions, msa_inner_loop(model, x_init, N, poly, scaler))
         print(f'{n}*--->{n+1}')
         n += 1
     return predictions 

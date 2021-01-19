@@ -8,14 +8,15 @@ mrstModule add ad-blackoil ad-core ad-props
 %% Setup Grid
 dx = 1-0.8*cos((0:2/40:2)*pi);
 x = (cumsum(dx(1:end)))/(sum(dx(1:end)));
-x = [0, x(1:end)];
-G = tensorGrid(x, [0,1]);
-plotGrid(G); ax = gca; ax.FontSize = 16;
+y = (cumsum(dx(1:end)))/(sum(dx(1:end)));
+x = [0, x(1:end)]; y = [0, y(1:end)];
+G = tensorGrid(x, y);
+%plotGrid(G); ax = gca; ax.FontSize = 16;
 G = computeGeometry(G);
 
 
 %% Setup flow params
-perm = 1*milli*darcy.*ones(G.cells.num,1);
+perm = 0.5*milli*darcy.*ones(G.cells.num,1);
 rock = struct('perm', perm, ...
               'poro', ones(G.cells.num, 1)*0.2); 
 fluid = initSimpleADIFluid('phases', 'W', 'mu', 1*centi*poise, 'rho', ...
@@ -40,8 +41,8 @@ initState.wellSol = initWellSolAD([], model, initState);
 % BCs
 bc_f = pside([], G, 'WEST', 1E6, 'sat', 1);
 bc_f = pside(bc_f, G, 'EAST', 1E6,'sat', 1);
-bc_f = fluxside(bc_f, G, 'SOUTH', 0, 'sat', 1);
-bc_f = fluxside(bc_f, G, 'NORTH', 0, 'sat', 1);
+bc_f = pside(bc_f, G, 'SOUTH', 1E6, 'sat', 1);
+bc_f = pside(bc_f, G, 'NORTH', 1E6, 'sat', 1);
 
 
 %% Setup schedule and simulate

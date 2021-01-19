@@ -18,7 +18,7 @@ from sklearn.preprocessing import PolynomialFeatures
 
 
 #%% Import and process data
-base_data = pd.read_csv('../Data/diffusionData.csv')
+base_data = pd.read_csv('../Data/diffusionData2D.csv')
 data_obj = D_creator(base_data, 2, 0, 1E6)
 data_set = data_obj.data_set
 data_set['target'] = data_set['p_m']
@@ -43,10 +43,8 @@ y_test = target.loc[X_test.index]
 
 #%% Train, test one-step ahead mode - Linear regression
 pr_model = LinearRegression()
-X_tr = X_train.drop(['p_i', 'time', 'dt^(n+1)', 'target'], axis = 1)
-X_tr = X_tr.reindex(['p_f^(n-2)', 'p^(n-2)', 'p_f^(n-1)', 'p^(n-1)', 'p_f^(n)', 'p^(n)'], axis=1)
-X_te = X_test.drop(['p_i', 'time', 'dt^(n+1)', 'target'], axis = 1)
-X_te = X_te.reindex(['p_f^(n-2)', 'p^(n-2)', 'p_f^(n-1)', 'p^(n-1)', 'p_f^(n)', 'p^(n)'], axis=1)
+X_tr = X_train.reindex(['p_f^(n-2)', 'p^(n-2)', 'p_f^(n-1)', 'p^(n-1)', 'p_f^(n)', 'p^(n)'], axis=1)
+X_te = X_test.reindex(['p_f^(n-2)', 'p^(n-2)', 'p_f^(n-1)', 'p^(n-1)', 'p_f^(n)', 'p^(n)'], axis=1)
 poly = PolynomialFeatures(2, include_bias = False).fit(X_tr)
 
 ## poly features
@@ -65,7 +63,7 @@ print(f'Train SSA RMSE: {RMSE_tr}, Test SSA RMSE: {RMSE_te}')
 #%% Test multi-step ahead mode
 init_test_inputs = X_te[['p_f^(n-2)', 'p^(n-2)', 'p_f^(n-1)', 'p^(n-1)', 'p_f^(n)', 'p^(n)']].to_numpy()
 init_test_inputs = init_test_inputs[0::N]
-p_msa = msa_outer_loop(pr_model, init_test_inputs, 0.1, N, poly)
+p_msa = msa_outer_loop(pr_model, init_test_inputs, N, poly)
 RMSE_msa = np.sqrt(mean_squared_error(y_test, p_msa))
 print(f'MSA RMSE: {RMSE_msa}')
  

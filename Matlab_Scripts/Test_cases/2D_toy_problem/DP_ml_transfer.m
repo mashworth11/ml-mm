@@ -14,7 +14,7 @@ perm = 10*darcy.*ones(G.cells.num,1);
 rock = struct('perm', perm, ...
               'poro', ones(G.cells.num, 1)*0.001); 
           
-perm_matrix = 1*milli*darcy.*ones(G.cells.num,1);
+perm_matrix = 0.5*milli*darcy.*ones(G.cells.num,1);
 %perm_matrix = [1, 0]*milli*darcy.*ones(G.cells.num,G.griddim);
 rock_matrix = struct('perm', perm_matrix, ...
               'poro', ones(G.cells.num, 1)*0.2); 
@@ -32,7 +32,7 @@ gravity off;
 %% Setup model
 model = WaterModelDP(G, {rock, rock_matrix},...
                         {fluid, fluid_matrix});
-model.dd_transfer_object = DataDrivenTransfer(rr_model);
+model.dd_transfer_object = DataDrivenTransfer(rr_model, 1.4E-9);
 
 
 %% Initialisation and BCs
@@ -43,10 +43,10 @@ model.FacilityModel = FacilityModel(model);
 model.validateModel();
 
 % BCs
-bc_f = pside([], G, 'WEST', 4E6, 'sat', 1);
-bc_f = pside(bc_f, G, 'EAST', 4E6,'sat', 1);
-bc_f = fluxside(bc_f, G, 'SOUTH', 0, 'sat', 1);
-bc_f = fluxside(bc_f, G, 'NORTH', 0, 'sat', 1);
+bc_f = pside([], G, 'WEST', 1E6, 'sat', 1);
+bc_f = pside(bc_f, G, 'EAST', 1E6,'sat', 1);
+bc_f = pside(bc_f, G, 'SOUTH', 1E6, 'sat', 1);
+bc_f = pside(bc_f, G, 'NORTH', 1E6, 'sat', 1);
 
 % initialise ML model
 model.dd_transfer_object.ML_inputs = struct('p_f2', state0.pressure_matrix, 'p_m2', state0.pressure_matrix,...

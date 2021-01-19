@@ -67,7 +67,7 @@ print(f'Train SSA RMSE: {RMSE_tr}, Test SSA RMSE: {RMSE_te}')
 #%% Test multi-step ahead mode
 init_test_inputs = X_te[['diff_p^(n-2)', 'diff_p^(n-1)', 'diff_p^(n)']].to_numpy()
 init_test_inputs = init_test_inputs[0::N]
-p_msa = msa_outer_loop(pr_model, init_test_inputs, 0.1, N, poly)
+p_msa = msa_outer_loop(pr_model, init_test_inputs, N, poly)
 RMSE_msa = np.sqrt(mean_squared_error(y_test, p_msa))
 print(f'MSA RMSE: {RMSE_msa}')
  

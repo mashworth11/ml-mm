@@ -7,7 +7,7 @@ mrstModule add ad-blackoil ad-core ad-props dual-porosity
 %% Setup Grid
 G = cartGrid([1,1], [1,1]);
 G = computeGeometry(G);
-plotGrid(G); ax = gca; ax.FontSize = 16;
+%plotGrid(G); ax = gca; ax.FontSize = 16;
 
 
 %% Setup flow params
@@ -15,7 +15,7 @@ perm = 10*darcy.*ones(G.cells.num,1);
 rock = struct('perm', perm, ...
               'poro', ones(G.cells.num, 1)*0.001); 
           
-perm_matrix = 1*milli*darcy.*ones(G.cells.num,1);
+perm_matrix = 0.5*milli*darcy.*ones(G.cells.num,1);
 rock_matrix = struct('perm', perm_matrix, ...
               'poro', ones(G.cells.num, 1)*0.2); 
           
@@ -35,7 +35,7 @@ model = WaterModelDP(G, {rock, rock_matrix},...
 model.transfer_model_object = SimpleTransferFunction();
 % shape factor according to Lim and Aziz
 L = 1;
-a = (pi^2)*(1/(L^2)); % shape factor
+a = (pi^2)*(2/(L^2)); % shape factor
 model.transfer_model_object.shape_factor_object.shape_factor_value = a;
 model.FacilityModel = FacilityModel(model); % needed when using nonlinear solver
 model.validateModel();
@@ -49,8 +49,8 @@ initState.wellSol = initWellSolAD([], model, initState);
 % BCs
 bc_f = pside([], G, 'WEST', 1E6, 'sat', 1);
 bc_f = pside(bc_f, G, 'EAST', 1E6,'sat', 1);
-bc_f = fluxside(bc_f, G, 'SOUTH', 0, 'sat', 1);
-bc_f = fluxside(bc_f, G, 'NORTH', 0, 'sat', 1);
+bc_f = pside(bc_f, G, 'SOUTH', 1E6, 'sat', 1);
+bc_f = pside(bc_f, G, 'NORTH', 1E6, 'sat', 1);
 
 
 %% Setup schedule and simulate

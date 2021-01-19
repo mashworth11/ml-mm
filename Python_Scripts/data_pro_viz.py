@@ -12,16 +12,15 @@ import matplotlib.lines as mlines
 #plt.rc('font', family='serif')
 from Utilities import D_creator
 
-
 #%% Import and process data
-base_data = pd.read_csv('../Data/diffusionData.csv')
+base_data = pd.read_csv('../Data/diffusionData2D.csv')
 data_obj = D_creator(base_data, 2, 0, 1E6)
 data_set = data_obj.data_set
 data_set['target'] = data_set['p_m']
 target = data_set['target']
 data_set = data_set.drop(['dp^(n)', 'dp^(n-1)', 'p_m'], axis = 1)
 MATLAB_data_set = data_obj.D_4_MATLAB()
-MATLAB_data_set.to_csv('../Data/processed_data_set.csv', index = False)
+MATLAB_data_set.to_csv('../Data/processed_diffusionData2D.csv', index = False)
 
 
 #%% Split training and testing data, and visualise
@@ -60,6 +59,7 @@ ax.set_xlabel('Time (s)', fontsize = 12);
 ax.set_ylim([1.5E4, 1.05E6]);
 ax.set_ylabel('Pressure (Pa)', fontsize = 12)
 ax.legend(handles=[f_pressure, data_targets], fontsize = 8, loc = 'lower right')
+plt.show()
 # =============================================================================
 # ax.axis('off')
 # ax.tick_params(labelsize=9)
@@ -97,6 +97,7 @@ ax.set_xlabel('Time (s)', fontsize = 12)
 ax.set_ylim([1.5E4, 1.05E6]);
 ax.set_ylabel('Pressure (Pa)', fontsize = 12)
 ax.legend(handles=[f_pressure, train_targets, test_targets], fontsize = 8, loc = 'lower right')
+plt.show()
 # =============================================================================
 # ax.axis('off')
 # fig.tight_layout(pad=0)

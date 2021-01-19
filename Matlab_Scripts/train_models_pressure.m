@@ -4,7 +4,7 @@
 % workflow and the import them into Matlab. 
 
 %% Import data
-processed_data_set = readtable('../data/processed_data_set.csv', 'PreserveVariableNames', true);
+processed_data_set = readtable('../data/processed_diffusionData2D.csv', 'PreserveVariableNames', true);
 
 
 %% Split data
@@ -68,3 +68,6 @@ RMSE_te = sqrt(mean((table2array(y_test) - p_te).^2));
 %% Results 
 fprintf('\nLinear regression training RMSE: %f\n', RMSE_tr);
 fprintf('\nLinear regression training RMSE: %f\n', RMSE_te);
+
+
+
