@@ -7,6 +7,7 @@ prediction test.
 """
 import numpy as np
 import pandas as pd
+import tensorflow as tf
 
 class D_creator:
     """
@@ -137,7 +138,6 @@ def msa_inner_loop(model, x_init, N, poly = None, scaler = None):
     for j in range(N):
         input_ = x_i.reshape(1,-1)
         if poly != None and scaler != None:
-            #import pdb; pdb.set_trace() 
             sc_input_ = scaler['sc_x'].transform(input_)
             sc_input_ = poly.transform(sc_input_)
             p[j] = scaler['sc_y'].inverse_transform(model.predict(sc_input_))  
@@ -150,9 +150,6 @@ def msa_inner_loop(model, x_init, N, poly = None, scaler = None):
                 p[j] = model.predict(input_)
             except ValueError:
                 break
-        #import pdb; pdb.set_trace() 
-        #x_i = np.concatenate((x_i[1:], np.array([1E6-p[j]]))) # diff pressures
-        #x_i = np.concatenate((x_i[1:], np.array([p[j]]))) # only pressure
         x_i = np.concatenate((x_i[2:], np.array([1E6, p[j]]))) # with fracture pressure
     return p
 
@@ -177,3 +174,29 @@ def msa_outer_loop(model, X_init, no_steps, poly = None, scaler = None):
         print(f'{n}*--->{n+1}')
         n += 1
     return predictions 
+
+
+def msa_ED_looper(X_init, predictions, no_steps, encoder_model, decoder_model):
+    """
+    Multistep-ahead encoder-decoder looper. 
+    
+    Arguments:
+        X_init - inputs
+        predictions - outputs
+        no_steps - number of steps
+        encoder_model - encoder
+        decoder_model - decoder
+             
+    Returns:
+        predictions - updated output array
+    """
+    X_init = X_init.copy()
+    predictions = predictions.copy()
+    states = encoder_model.predict(X_init)
+    decoder_input = np.zeros((X_init.shape[0], 1, 2))
+    for i in range(no_steps):
+        output, h, c = decoder_model.predict([decoder_input] + states)
+        predictions[:, i, np.newaxis] = output[:, -1, np.newaxis]
+        decoder_input[:, :, 0, np.newaxis] = predictions[:, i, np.newaxis]
+        states = [h, c]   
+    return predictions
