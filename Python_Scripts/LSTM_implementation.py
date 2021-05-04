@@ -15,6 +15,7 @@ from tensorflow import keras
 from tensorflow.keras.layers import Dense
 from tensorflow.keras.layers import LSTM
 from tensorflow.keras.optimizers import Adam
+from tensorflow.keras.optimizers import SGD
 from sklearn.preprocessing import StandardScaler
 
 
@@ -67,16 +68,21 @@ X_te_decoder = X_te_decoder.reshape((K_test, N, 2))
 
 
 #%% Setup encoder-decoder LSTM
+from numpy.random import seed 
+seed(27) # 17 #77
+import tensorflow as tf
+tf.random.set_seed(27)
+
 encoder_inputs = keras.layers.Input(shape = [None, 2])
 decoder_inputs = keras.layers.Input(shape = [None, 2])
 
 # encoder 
-encoder = LSTM(20, return_state = True)
+encoder = LSTM(12, return_state = True)
 encoder_outputs, state_h, state_c = encoder(encoder_inputs)
 encoder_states = [state_h, state_c]
 
 # decoder
-decoder = LSTM(20, return_sequences=True, return_state=True)
+decoder = LSTM(12, return_sequences=True, return_state=True)
 decoder_outputs, _, _ = decoder(inputs = decoder_inputs, initial_state = encoder_states)
 decoder_dense = Dense(1, activation='linear')
 decoder_outputs = decoder_dense(decoder_outputs)
@@ -84,12 +90,14 @@ decoder_outputs = decoder_dense(decoder_outputs)
 # define and train encoder-decoder model
 ed_model = keras.Model(inputs = [encoder_inputs, decoder_inputs], outputs = decoder_outputs)
 ed_model.compile(loss = 'mse', optimizer = Adam(lr = 0.01))
-ed_model.fit([X_tr_encoder, X_tr_decoder], y_tr_scaled, epochs = 10, batch_size = 2)
+ed_model.fit([X_tr_encoder, X_tr_decoder], y_tr_scaled, epochs = 100, batch_size = 4)
 
 # prediction on training sequence - treated as a singlestep-ahead prediction
 p_ed_tr = sc_y.inverse_transform(ed_model.predict([X_tr_encoder, X_tr_decoder]).reshape((-1,1)))
+p_ed_te = sc_y.inverse_transform(ed_model.predict([X_te_encoder, X_te_decoder]).reshape((-1,1)))
 RMSE_ed_tr = np.sqrt(mean_squared_error(y_train, p_ed_tr))
-print(f'Training score across all timesteps: {RMSE_ed_tr}')
+RMSE_ed_te = np.sqrt(mean_squared_error(y_test, p_ed_te))
+print(f'Training score across all timesteps: {RMSE_ed_tr}, testing score across all timesteps: {RMSE_ed_te}')
 
 
 #%% Test multi-step ahead mode
@@ -97,8 +105,8 @@ print(f'Training score across all timesteps: {RMSE_ed_tr}')
 encoder_model = keras.Model(encoder_inputs, encoder_states) 
 
 # create Tensorflow decoder objects for multistep-ahead prediction based on trained decoder above 
-decoder_state_input_h = keras.layers.Input(shape=(20,))
-decoder_state_input_c = keras.layers.Input(shape=(20,))
+decoder_state_input_h = keras.layers.Input(shape=(12,))
+decoder_state_input_c = keras.layers.Input(shape=(12,))
 decoder_states_inputs = [decoder_state_input_h, decoder_state_input_c]
 decoder_outputs, state_h, state_c = decoder(decoder_inputs, initial_state = decoder_states_inputs)
 decoder_states = [state_h, state_c] 
@@ -135,18 +143,16 @@ for i in range(K_train):
     start += N; stop += N
 prediction =  mlines.Line2D([], [], color = blue, alpha = 0.7, linewidth = 1, 
                             linestyle = '--', label='Prediction')
-ax.set_xlim([min(times), 100])
+ax.set_xlim([min(times), max(times)])
 ax.set_xlabel('Time (s)', fontsize = 12)
 ax.set_ylim([1.5E4, 1E6])
 ax.set_ylabel('Pressure (Pa)', fontsize = 12)
 ax.tick_params(labelsize=14)
 ax.legend(handles=[train_targets, prediction], fontsize = 8, loc = 'lower right')
-# =============================================================================
-# ax.axis('off')
-# fig.tight_layout(pad=0)
-# ax.figure.set_size_inches(5.5/2.54, 5.5/2.54)
-# plt.savefig('train_pr.png', dpi = 600)
-# =============================================================================
+ax.axis('off')
+fig.tight_layout(pad=0)
+ax.figure.set_size_inches(4.5/2.54, 4.5/2.54)
+plt.savefig('train_LSTM.png', dpi = 600)
 
 
 # testing: multi-step ahead
@@ -166,18 +172,16 @@ for i in range(K_test):
     start += N; stop += N
 prediction =  mlines.Line2D([], [], color = red, alpha = 0.7, linewidth = 1, 
                             linestyle = '--', label='Prediction')
-ax.set_xlim([min(times), 100])
+ax.set_xlim([min(times), max(times)])
 ax.set_xlabel('Time (s)', fontsize = 12)
 ax.set_ylim([1.5E4, 1E6])
 ax.set_ylabel('Pressure (Pa)', fontsize = 12)
 ax.tick_params(labelsize=14)
 ax.legend(handles=[test_targets, prediction], fontsize = 8, loc = 'lower right')
-# =============================================================================
-# ax.axis('off')
-# fig.tight_layout(pad=0)
-# ax.figure.set_size_inches(5.5/2.54, 5.5/2.54)
-# plt.savefig('test_pr.png', dpi = 600)
-# =============================================================================
+ax.axis('off')
+fig.tight_layout(pad=0)
+ax.figure.set_size_inches(4.5/2.54, 4.5/2.54)
+plt.savefig('test_LSTM.png', dpi = 600)
 
 
 

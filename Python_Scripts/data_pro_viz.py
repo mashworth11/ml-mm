@@ -13,14 +13,14 @@ import matplotlib.lines as mlines
 from Utilities import D_creator
 
 #%% Import and process data
-base_data = pd.read_csv('../Data/diffusionData2D.csv')
+base_data = pd.read_csv('../Data/diffusionData3D.csv')
 data_obj = D_creator(base_data, 2, 0, 1E6)
 data_set = data_obj.data_set
 data_set['target'] = data_set['p_m']
 target = data_set['target']
 data_set = data_set.drop(['dp^(n)', 'dp^(n-1)', 'p_m'], axis = 1)
 MATLAB_data_set = data_obj.D_4_MATLAB()
-MATLAB_data_set.to_csv('../Data/processed_diffusionData2D.csv', index = False)
+MATLAB_data_set.to_csv('../Data/processed_diffusionData3D.csv', index = False)
 
 
 #%% Split training and testing data, and visualise
@@ -52,11 +52,11 @@ data_targets =  mlines.Line2D([], [], color = 'k', alpha = 0.5,
 
 ax.semilogx(times, np.ones(len(times))*1E6, color = 'tab:green', alpha = 0.7, linewidth = 1.5)
 f_pressure =  mlines.Line2D([], [], color = 'tab:green', alpha = 0.7,
-                         linewidth = 1.5, label='Fracture pressure')
+                         linewidth = 1.5, label=r'$\overline{p}_2$')
 
-ax.set_xlim([min(times), 100]);  
+ax.set_xlim([min(times), max(times)]);  
 ax.set_xlabel('Time (s)', fontsize = 12); 
-ax.set_ylim([1.5E4, 1.05E6]);
+#ax.set_ylim([1.5E4, 1.05E6]);
 ax.set_ylabel('Pressure (Pa)', fontsize = 12)
 ax.legend(handles=[f_pressure, data_targets], fontsize = 8, loc = 'lower right')
 plt.show()
@@ -64,7 +64,7 @@ plt.show()
 # ax.axis('off')
 # ax.tick_params(labelsize=9)
 # fig.tight_layout(pad=0)
-# ax.figure.set_size_inches(5.5/2.54, 5.5/2.54)
+# ax.figure.set_size_inches(4.5/2.54, 4.5/2.54)
 # plt.savefig('full_data.png', dpi = 600)
 # =============================================================================
 
@@ -90,18 +90,18 @@ test_targets =  mlines.Line2D([], [], color = red, alpha = 0.7,
 
 ax.semilogx(times, np.ones(len(times))*1E6, color = 'tab:green', alpha = 0.7, linewidth = 1.5)
 f_pressure =  mlines.Line2D([], [], color = 'tab:green', alpha = 0.7,
-                         linewidth = 1.5, label='Fracture pressure')
+                         linewidth = 1.5, label=r'$\overline{p}_2$')
 
-ax.set_xlim([min(times), 100])
+ax.set_xlim([min(times), max(times)])
 ax.set_xlabel('Time (s)', fontsize = 12)
-ax.set_ylim([1.5E4, 1.05E6]);
+#ax.set_ylim([1.5E4, 1.05E6]);
 ax.set_ylabel('Pressure (Pa)', fontsize = 12)
 ax.legend(handles=[f_pressure, train_targets, test_targets], fontsize = 8, loc = 'lower right')
-plt.show()
 # =============================================================================
+# plt.show()
 # ax.axis('off')
 # fig.tight_layout(pad=0)
-# ax.figure.set_size_inches(5.5/2.54, 5.5/2.54)
+# ax.figure.set_size_inches(4.5/2.54, 4.5/2.54)
 # plt.savefig('train_test_data.png', dpi = 600)
 # =============================================================================
 

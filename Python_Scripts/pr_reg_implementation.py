@@ -20,7 +20,7 @@ from sklearn.linear_model import Ridge
 
 
 #%% Import and process data
-base_data = pd.read_csv('../Data/diffusionData2D.csv')
+base_data = pd.read_csv('../Data/diffusionData3D.csv')
 data_obj = D_creator(base_data, 2, 0, 1E6)
 data_set = data_obj.data_set
 data_set['target'] = data_set['p_m']
@@ -44,29 +44,29 @@ y_test = target.loc[X_test.index]
 
 
 #%% Train, test one-step ahead mode - Linear regression
-Ridge_model = Ridge(alpha = 1E-6, fit_intercept = 0)
+Ridge_model = Ridge(alpha = 1E-8, fit_intercept = 0)
 X_tr = X_train.reindex(['p_f^(n-2)', 'p^(n-2)', 'p_f^(n-1)', 'p^(n-1)', 'p_f^(n)', 'p^(n)'], axis=1)
 X_te = X_test.reindex(['p_f^(n-2)', 'p^(n-2)', 'p_f^(n-1)', 'p^(n-1)', 'p_f^(n)', 'p^(n)'], axis=1)
 poly = PolynomialFeatures(2, include_bias = False).fit(X_tr)
 
+## poly features
+X_tr_poly = pd.DataFrame(poly.transform(X_tr), columns = poly.get_feature_names(X_tr.columns))
+X_te_poly = pd.DataFrame(poly.transform(X_te), columns = poly.get_feature_names(X_te.columns))
+
 ## scalers
 sc_x = StandardScaler()
-X_tr_scaled = sc_x.fit_transform(X_tr)
-X_te_scaled = sc_x.transform(X_te)
+X_trp_scaled = sc_x.fit_transform(X_tr_poly)
+X_tep_scaled = sc_x.transform(X_te_poly)
 sc_y = StandardScaler()
 y_tr_scaled = sc_y.fit_transform(y_train.to_numpy().reshape((-1,1)))
 y_te_scaled = sc_y.transform(y_test.to_numpy().reshape((-1,1)))
 scaler = {'sc_x':sc_x, 'sc_y':sc_y}
 
-## poly features
-X_tr_poly = pd.DataFrame(poly.transform(X_tr_scaled), columns = poly.get_feature_names(X_tr.columns))
-X_te_poly = pd.DataFrame(poly.transform(X_te_scaled), columns = poly.get_feature_names(X_te.columns))
-
 ## fitting 
-Ridge_model.fit(X_tr_poly, y_tr_scaled)
-p_tr = sc_y.inverse_transform(Ridge_model.predict(X_tr_poly))
+Ridge_model.fit(X_trp_scaled, y_tr_scaled)
+p_tr = sc_y.inverse_transform(Ridge_model.predict(X_trp_scaled))
 RMSE_tr = np.sqrt(mean_squared_error(y_train, p_tr))
-p_te = sc_y.inverse_transform(Ridge_model.predict(X_te_poly))
+p_te = sc_y.inverse_transform(Ridge_model.predict(X_tep_scaled))
 RMSE_te = np.sqrt(mean_squared_error(y_test, p_te))
 print(f'Train SSA RMSE: {RMSE_tr}, Test SSA RMSE: {RMSE_te}')
 
@@ -100,7 +100,7 @@ for i in range(K_train):
     start += N; stop += N
 prediction =  mlines.Line2D([], [], color = blue, alpha = 0.7, linewidth = 1, 
                             linestyle = '--', label='Prediction')
-ax.set_xlim([min(times), 100])
+ax.set_xlim([min(times), max(times)])
 ax.set_xlabel('Time (s)', fontsize = 12)
 ax.set_ylim([1.5E4, 1E6])
 ax.set_ylabel('Pressure (Pa)', fontsize = 12)
@@ -109,33 +109,35 @@ ax.legend(handles=[train_targets, prediction], fontsize = 8, loc = 'lower right'
 # =============================================================================
 # ax.axis('off')
 # fig.tight_layout(pad=0)
-# ax.figure.set_size_inches(5.5/2.54, 5.5/2.54)
-# plt.savefig('train_pr.png', dpi = 600)
+# ax.figure.set_size_inches(4.5/2.54, 4.5/2.54)
+# plt.savefig('train_rpr.png', dpi = 600)
 # =============================================================================
 
 # testing: one-step ahead
-fig, ax = plt.subplots(figsize=(12, 7))
-#ax.set_title('Testing: SSA', fontsize=14)
-start = 0; stop = N
-for i in range(K_test):
-    ax.semilogx(times, X_test['target'].iloc[start:stop], color = 'k', 
-                marker = 'x', markersize = 4, alpha = 0.5)
-    start += N; stop += N
-test_targets =  mlines.Line2D([], [], color='k', marker='x', alpha = 0.5,
-                          markersize=4, label='Target')
-start = 0; stop = N
-for i in range(K_test):
-    ax.semilogx(times, p_te[start:stop], color = 'tab:green', 
-                marker = 'o', markersize = 4, alpha = 0.5, fillstyle = 'none')
-    start += N; stop += N
-prediction =  mlines.Line2D([], [], color='tab:green', marker='o', alpha = 0.5,
-                          fillstyle = 'none', markersize=4, label='Prediction')
-ax.set_xlim([min(times), 100])
-ax.set_xlabel('Time (s)', fontsize = 12)
-ax.set_ylim([1.5E4, 1E6])
-ax.set_ylabel('Pressure (Pa)', fontsize = 12)
-ax.tick_params(labelsize=14)
-ax.legend(handles=[test_targets, prediction])
+# =============================================================================
+# fig, ax = plt.subplots(figsize=(12, 7))
+# #ax.set_title('Testing: SSA', fontsize=14)
+# start = 0; stop = N
+# for i in range(K_test):
+#     ax.semilogx(times, X_test['target'].iloc[start:stop], color = 'k', 
+#                 marker = 'x', markersize = 4, alpha = 0.5)
+#     start += N; stop += N
+# test_targets =  mlines.Line2D([], [], color='k', marker='x', alpha = 0.5,
+#                           markersize=4, label='Target')
+# start = 0; stop = N
+# for i in range(K_test):
+#     ax.semilogx(times, p_te[start:stop], color = 'tab:green', 
+#                 marker = 'o', markersize = 4, alpha = 0.5, fillstyle = 'none')
+#     start += N; stop += N
+# prediction =  mlines.Line2D([], [], color='tab:green', marker='o', alpha = 0.5,
+#                           fillstyle = 'none', markersize=4, label='Prediction')
+# ax.set_xlim([min(times), 100])
+# ax.set_xlabel('Time (s)', fontsize = 12)
+# ax.set_ylim([1.5E4, 1E6])
+# ax.set_ylabel('Pressure (Pa)', fontsize = 12)
+# ax.tick_params(labelsize=14)
+# ax.legend(handles=[test_targets, prediction])
+# =============================================================================
 
 # testing: multi-step ahead
 fig, ax = plt.subplots(figsize=(12, 7))
@@ -154,7 +156,7 @@ for i in range(K_test):
     start += N; stop += N
 prediction =  mlines.Line2D([], [], color = red, alpha = 0.7, linewidth = 1, 
                             linestyle = '--', label='Prediction')
-ax.set_xlim([min(times), 100])
+ax.set_xlim([min(times), max(times)])
 ax.set_xlabel('Time (s)', fontsize = 12)
 ax.set_ylim([1.5E4, 1E6])
 ax.set_ylabel('Pressure (Pa)', fontsize = 12)
@@ -163,6 +165,6 @@ ax.legend(handles=[test_targets, prediction], fontsize = 8, loc = 'lower right')
 # =============================================================================
 # ax.axis('off')
 # fig.tight_layout(pad=0)
-# ax.figure.set_size_inches(5.5/2.54, 5.5/2.54)
-# plt.savefig('test_pr.png', dpi = 600)
+# ax.figure.set_size_inches(4.5/2.54, 4.5/2.54)
+# plt.savefig('test_rpr.png', dpi = 600)
 # =============================================================================

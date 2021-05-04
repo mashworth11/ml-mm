@@ -20,7 +20,7 @@ from sklearn.linear_model import Ridge
 
 
 #%% Import and process data
-base_data = pd.read_csv('../Data/diffusionData.csv')
+base_data = pd.read_csv('../Data/diffusionData2D.csv')
 data_obj = D_creator(base_data, 2, 3, 1E6)
 data_set = data_obj.data_set
 data_set['target'] = data_set['p_m']
@@ -45,10 +45,8 @@ y_test = target.loc[X_test.index]
 
 #%% Train, test one-step ahead mode - Linear regression
 pr_model = LinearRegression()
-X_tr = X_train[X_train.columns[X_train.columns.isin(['diff_p^(n-2)', 'diff_p^(n-1)', 'diff_p^(n)'])]]
-X_tr = X_tr.reindex(['diff_p^(n-2)', 'diff_p^(n-1)', 'diff_p^(n)'], axis=1)
-X_te = X_test[X_test.columns[X_test.columns.isin(['diff_p^(n-2)', 'diff_p^(n-1)', 'diff_p^(n)'])]]
-X_te = X_te.reindex(['diff_p^(n-2)', 'diff_p^(n-1)', 'diff_p^(n)'], axis=1)
+X_tr = X_train.reindex([ 'diff_p^(n-2)', 'diff_p^(n-1)', 'diff_p^(n)'], axis=1)
+X_te = X_test.reindex([ 'diff_p^(n-2)', 'diff_p^(n-1)', 'diff_p^(n)'], axis=1)
 poly = PolynomialFeatures(2, include_bias = False).fit(X_tr)
 
 ## poly features
@@ -67,7 +65,7 @@ print(f'Train SSA RMSE: {RMSE_tr}, Test SSA RMSE: {RMSE_te}')
 #%% Test multi-step ahead mode
 init_test_inputs = X_te[['diff_p^(n-2)', 'diff_p^(n-1)', 'diff_p^(n)']].to_numpy()
 init_test_inputs = init_test_inputs[0::N]
-p_msa = msa_outer_loop(pr_model, init_test_inputs, N, poly)
+p_msa = msa_outer_loop(pr_model, init_test_inputs, N, poly, scaler = None, diffs = True)
 RMSE_msa = np.sqrt(mean_squared_error(y_test, p_msa))
 print(f'MSA RMSE: {RMSE_msa}')
  

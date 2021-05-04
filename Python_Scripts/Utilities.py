@@ -112,16 +112,18 @@ class D_creator:
         Method to prepare data_set for use in MATLAB.
         """
         MATLAB_D = self.data_set[self.data_set.columns[self.data_set.columns.isin(
-                                ['p_i', 'p_f^(n-2)', 'p_f^(n-1)', 'p_f^(n)', 
-                                 'p^(n-2)', 'p^(n-1)', 'p^(n)', 'target'])]]
-        MATLAB_D = MATLAB_D.reindex(['p_i', 'p_f^(n-2)', 'p^(n-2)', 'p_f^(n-1)', 
-                                     'p^(n-1)', 'p_f^(n)', 'p^(n)', 'target'], 
+                                ['p_i', 'time', 'p_f^(n-2)', 'p_f^(n-1)', 'p_f^(n)', 
+                                 'p^(n-2)', 'p^(n-1)', 'p^(n)',  
+                                 'target'])]]
+        MATLAB_D = MATLAB_D.reindex(['p_i', 'time', 'p_f^(n-2)', 'p^(n-2)',
+                                     'p_f^(n-1)', 'p^(n-1)', 
+                                     'p_f^(n)', 'p^(n)', 'target'], 
                                     axis = 1)
         return MATLAB_D
                     
         
 #%% Multi-step ahead prediction functions        
-def msa_inner_loop(model, x_init, N, poly = None, scaler = None):
+def msa_inner_loop(model, x_init, N, poly = None, scaler = None, diffs = False):
     """
     Function to perform inner loop of the multi-step ahead prediction.
     Inputs:
@@ -137,24 +139,32 @@ def msa_inner_loop(model, x_init, N, poly = None, scaler = None):
     p = np.zeros(N)
     for j in range(N):
         input_ = x_i.reshape(1,-1)
-        if poly != None and scaler != None:
-            sc_input_ = scaler['sc_x'].transform(input_)
-            sc_input_ = poly.transform(sc_input_)
-            p[j] = scaler['sc_y'].inverse_transform(model.predict(sc_input_))  
-        elif scaler != None:
-            sc_input_ = scaler['sc_x'].transform(input_)
-            p[j] = (scaler['sc_y'].inverse_transform(model.predict(sc_input_).reshape(1,-1))).ravel()
+        if diffs == False: # check for difference ffeatures
+            if poly != None and scaler != None:
+                sc_input_ = poly.transform(input_)
+                sc_input_ = scaler['sc_x'].transform(sc_input_)
+                p[j] = scaler['sc_y'].inverse_transform(model.predict(sc_input_))  
+            elif scaler != None: # neural net
+                sc_input_ = scaler['sc_x'].transform(input_)      
+                p[j] = (scaler['sc_y'].inverse_transform(model(sc_input_).numpy().reshape(1,-1))).ravel()
+            else:
+                try:
+                    input_ = poly.transform(input_)
+                    p[j] = model.predict(input_)
+                except ValueError:
+                    break
+            x_i = np.concatenate((x_i[2:], np.array([1E6, p[j]]))) # with fracture pressure
         else:
             try:
                 input_ = poly.transform(input_)
                 p[j] = model.predict(input_)
             except ValueError:
                 break
-        x_i = np.concatenate((x_i[2:], np.array([1E6, p[j]]))) # with fracture pressure
+            x_i = np.concatenate((x_i[1:], np.array([1E6 - p[j]]))) # with fracture pressure
     return p
 
 
-def msa_outer_loop(model, X_init, no_steps, poly = None, scaler = None):
+def msa_outer_loop(model, X_init, no_steps, poly = None, scaler = None, diffs = False):
     """
     Function to run outer loop of the multi-step ahead prediction given.  
     Inputs:
@@ -170,7 +180,7 @@ def msa_outer_loop(model, X_init, no_steps, poly = None, scaler = None):
     predictions = np.array([])
     n = 0 
     for x_init in X_init:
-        predictions = np.append(predictions, msa_inner_loop(model, x_init, N, poly, scaler))
+        predictions = np.append(predictions, msa_inner_loop(model, x_init, N, poly, scaler, diffs))
         print(f'{n}*--->{n+1}')
         n += 1
     return predictions 
@@ -195,7 +205,7 @@ def msa_ED_looper(X_init, predictions, no_steps, encoder_model, decoder_model):
     states = encoder_model.predict(X_init)
     decoder_input = np.zeros((X_init.shape[0], 1, 2))
     for i in range(no_steps):
-        output, h, c = decoder_model.predict([decoder_input] + states)
+        output, h, c = decoder_model([decoder_input] + states)
         predictions[:, i, np.newaxis] = output[:, -1, np.newaxis]
         decoder_input[:, :, 0, np.newaxis] = predictions[:, i, np.newaxis]
         states = [h, c]   

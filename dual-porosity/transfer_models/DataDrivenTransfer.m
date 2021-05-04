@@ -40,15 +40,17 @@ along with MRST.  If not, see <http://www.gnu.org/licenses/>.
         compressibility_factor
         ML_inputs
         scaler
+        type
     end
     
     methods
-        function dd_object = DataDrivenTransfer(ML_model, compressibility_factor)
+        function dd_object = DataDrivenTransfer(ML_model, compressibility_factor, type)
             % Class constructor
             dd_object.ML_model = ML_model;
             dd_object.compressibility_factor = compressibility_factor;
             dd_object.ML_inputs = struct();
             dd_object.scaler = struct();
+            dd_object.type = type;
         end
         
         function [prediction] = calculate_trans_term(dd_object, varargin)

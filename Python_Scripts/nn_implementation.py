@@ -19,7 +19,7 @@ from sklearn.preprocessing import StandardScaler
 
 
 #%% Import and process data
-base_data = pd.read_csv('../Data/diffusionData2D.csv')
+base_data = pd.read_csv('../Data/diffusionData3D.csv')
 data_obj = D_creator(base_data, 2, 0, 1E6)
 data_set = data_obj.data_set
 data_set['target'] = data_set['p_m']
@@ -50,17 +50,27 @@ import tensorflow as tf
 tf.random.set_seed(17)
 
 # define model
-def build_nn_model():
-    # create model
-    model = Sequential()
-    model.add(Dense(12, input_dim = 6, activation='elu', kernel_initializer = 'glorot_uniform'))
-    model.add(Dense(1, activation='linear'))
-    # compile model
-    opt = SGD(lr = 0.01, momentum = 0.9, nesterov=True)
-    model.compile(loss='mean_squared_error', optimizer=opt)
-    return model
+# =============================================================================
+# def build_nn_model():
+#     # create model
+#     model = Sequential()
+#     model.add(Dense(12, input_dim = 6, activation='elu'))
+#     model.add(Dense(1, activation='linear'))
+#     # compile model
+#     opt = SGD(lr = 0.01, momentum = 0.9, nesterov=True)
+#     model.compile(loss='mean_squared_error', optimizer=opt)
+#     return model
+# 
+# nn_model = KerasRegressor(build_fn = build_nn_model, batch_size = 128, epochs = 500)
+# =============================================================================
 
-nn_model = KerasRegressor(build_fn = build_nn_model, batch_size = 128, epochs = 500)
+nn_model = Sequential()
+nn_model.add(Dense(12, input_dim = 6, activation='elu'))
+nn_model.add(Dense(1, activation='linear'))
+# compile model
+opt = SGD(lr = 0.01, momentum = 0.9, nesterov=True)
+nn_model.compile(loss='mean_squared_error', optimizer=opt)
+
 
 
 #%% Train, test in single-step ahead mode
@@ -77,8 +87,8 @@ y_te_scaled = sc_y.transform(y_test.to_numpy().reshape((-1,1)))
 scaler = {'sc_x':sc_x, 'sc_y':sc_y}
 
 # fit and predict
-nn_model.fit(X_tr_scaled, y_tr_scaled)
-#nn_model.model.save('../Data/nn_model.h5')
+nn_model.fit(X_tr_scaled, y_tr_scaled, epochs = 500, batch_size = 128)
+#nn_model.save('../Data/nn_model.h5')
 p_nn_tr = sc_y.inverse_transform(nn_model.predict(X_tr_scaled))
 RMSE_nn_tr = np.sqrt(mean_squared_error(y_train, p_nn_tr))
 p_nn_te = sc_y.inverse_transform(nn_model.predict(X_te_scaled))
@@ -91,7 +101,7 @@ init_test_inputs = X_te[['p_f^(n-2)', 'p^(n-2)', 'p_f^(n-1)', 'p^(n-1)', 'p_f^(n
 init_test_inputs = init_test_inputs[0::N]
 p_nn_msa = msa_outer_loop(nn_model, init_test_inputs, N, scaler = scaler)
 RMSE_nn_msa = np.sqrt(mean_squared_error(y_test, p_nn_msa))
-print(f'neurel net MSA RMSE: {RMSE_nn_msa}')
+print(f'Nuerel net MSA RMSE: {RMSE_nn_msa}')
 
 
 #%% Visualise results
@@ -115,18 +125,16 @@ for i in range(K_train):
     start += N; stop += N
 prediction =  mlines.Line2D([], [], color = blue, alpha = 0.7, linewidth = 1, 
                             linestyle = '--', label='Prediction')
-ax.set_xlim([min(times), 100])
+ax.set_xlim([min(times), max(times)])
 ax.set_xlabel('Time (s)', fontsize = 12)
 ax.set_ylim([1.5E4, 1E6])
 ax.set_ylabel('Pressure (Pa)', fontsize = 12)
 ax.tick_params(labelsize=14)
 ax.legend(handles=[train_targets, prediction], fontsize = 8, loc = 'lower right')
-# =============================================================================
-# ax.axis('off')
-# fig.tight_layout(pad=0)
-# ax.figure.set_size_inches(5.5/2.54, 5.5/2.54)
-# plt.savefig('train_pr.png', dpi = 600)
-# =============================================================================
+ax.axis('off')
+fig.tight_layout(pad=0)
+ax.figure.set_size_inches(4.5/2.54, 5.5/2.54)
+plt.savefig('train_nn.png', dpi = 600)
 
 
 # testing: multi-step ahead
@@ -146,16 +154,14 @@ for i in range(K_test):
     start += N; stop += N
 prediction =  mlines.Line2D([], [], color = red, alpha = 0.7, linewidth = 1, 
                             linestyle = '--', label='Prediction')
-ax.set_xlim([min(times), 100])
+ax.set_xlim([min(times), max(times)])
 ax.set_xlabel('Time (s)', fontsize = 12)
 ax.set_ylim([1.5E4, 1E6])
 ax.set_ylabel('Pressure (Pa)', fontsize = 12)
 ax.tick_params(labelsize=14)
 ax.legend(handles=[test_targets, prediction], fontsize = 8, loc = 'lower right')
-# =============================================================================
-# ax.axis('off')
-# fig.tight_layout(pad=0)
-# ax.figure.set_size_inches(5.5/2.54, 5.5/2.54)
-# plt.savefig('test_pr.png', dpi = 600)
-# =============================================================================
+ax.axis('off')
+fig.tight_layout(pad=0)
+ax.figure.set_size_inches(4.5/2.54, 5.5/2.54)
+plt.savefig('test_nn.png', dpi = 600)
 

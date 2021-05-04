@@ -167,10 +167,19 @@ transfer_model = model.transfer_model_object;
 if isa(model.dd_transfer_object, 'DataDrivenTransfer')
     dd_object = model.dd_transfer_object;
     in = dd_object.ML_inputs;
+    type = dd_object.type;
+    if strcmp(type, 'pressure')
     % 0 is the current time level, n, and 1 is the previous time level, n-1, etc. 
         p_m = dd_object.calculate_trans_term(in.p_f2, in.p_m2, in.p_f1, in.p_m1, in.p_f0, in.p_m0);
-        Talpha = ((p_m-pm0)/dt)*model.rock_matrix.poro.*dd_object.compressibility_factor; 
+        Talpha = ((p_m-pm0)/dt).*model.rock_matrix.poro.*dd_object.compressibility_factor; 
         Tw = double(vb.*Talpha);
+    elseif strcmp(type, 'pressure_change')
+        Talpha = dd_object.calculate_trans_term(in.dp_f2, in.dp_m2, in.dp_f1, in.dp_m1, in.dp_f0, in.dp_m0);
+        Talpha = Talpha.*model.rock_matrix.poro.*dd_object.compressibility_factor;
+        Tw = double(vb.*Talpha);
+    else
+        error('Valid prediction type not specified. Type must be either pressure or pressure_change')
+    end
 else % standard transfer 
     Talpha = transfer_model.calculate_transfer(model,fracture_fields,matrix_fields);
     Tw = double(vb.*Talpha);

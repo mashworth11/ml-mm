@@ -18,8 +18,8 @@ from sklearn.preprocessing import PolynomialFeatures
 
 
 #%% Import and process data
-base_data = pd.read_csv('../Data/diffusionData2D.csv')
-data_obj = D_creator(base_data, 2, 0, 1E6)
+base_data = pd.read_csv('../Data/diffusionData3D.csv')
+data_obj = D_creator(base_data, 3, 0, 1E6)
 data_set = data_obj.data_set
 data_set['target'] = data_set['p_m']
 target = data_set['target']
@@ -89,7 +89,7 @@ for i in range(K_train):
     start += N; stop += N
 prediction =  mlines.Line2D([], [], color = blue, alpha = 0.7, linewidth = 1, 
                             linestyle = '--', label='Prediction')
-ax.set_xlim([min(times), 100])
+ax.set_xlim([min(times), max(times)])
 ax.set_xlabel('Time (s)', fontsize = 12)
 ax.set_ylim([1.5E4, 1E6])
 ax.set_ylabel('Pressure (Pa)', fontsize = 12)
@@ -98,33 +98,35 @@ ax.legend(handles=[train_targets, prediction], fontsize = 8, loc = 'lower right'
 # =============================================================================
 # ax.axis('off')
 # fig.tight_layout(pad=0)
-# ax.figure.set_size_inches(5.5/2.54, 5.5/2.54)
-# plt.savefig('train_pr.png', dpi = 600)
+# ax.figure.set_size_inches(4.5/2.54, 4.5/2.54)
+# plt.savefig('train_upr.png', dpi = 600)
 # =============================================================================
 
 # testing: one-step ahead
-fig, ax = plt.subplots(figsize=(12, 7))
-#ax.set_title('Testing: SSA', fontsize=14)
-start = 0; stop = N
-for i in range(K_test):
-    ax.semilogx(times, X_test['target'].iloc[start:stop], color = 'k', 
-                marker = 'x', markersize = 4, alpha = 0.5)
-    start += N; stop += N
-test_targets =  mlines.Line2D([], [], color='k', marker='x', alpha = 0.5,
-                          markersize=4, label='Target')
-start = 0; stop = N
-for i in range(K_test):
-    ax.semilogx(times, p_te[start:stop], color = 'tab:green', 
-                marker = 'o', markersize = 4, alpha = 0.5, fillstyle = 'none')
-    start += N; stop += N
-prediction =  mlines.Line2D([], [], color='tab:green', marker='o', alpha = 0.5,
-                          fillstyle = 'none', markersize=4, label='Prediction')
-ax.set_xlim([min(times), 100])
-ax.set_xlabel('Time (s)', fontsize = 12)
-ax.set_ylim([1.5E4, 1E6])
-ax.set_ylabel('Pressure (Pa)', fontsize = 12)
-ax.tick_params(labelsize=14)
-ax.legend(handles=[test_targets, prediction])
+# =============================================================================
+# fig, ax = plt.subplots(figsize=(12, 7))
+# #ax.set_title('Testing: SSA', fontsize=14)
+# start = 0; stop = N
+# for i in range(K_test):
+#     ax.semilogx(times, X_test['target'].iloc[start:stop], color = 'k', 
+#                 marker = 'x', markersize = 4, alpha = 0.5)
+#     start += N; stop += N
+# test_targets =  mlines.Line2D([], [], color='k', marker='x', alpha = 0.5,
+#                           markersize=4, label='Target')
+# start = 0; stop = N
+# for i in range(K_test):
+#     ax.semilogx(times, p_te[start:stop], color = 'tab:green', 
+#                 marker = 'o', markersize = 4, alpha = 0.5, fillstyle = 'none')
+#     start += N; stop += N
+# prediction =  mlines.Line2D([], [], color='tab:green', marker='o', alpha = 0.5,
+#                           fillstyle = 'none', markersize=4, label='Prediction')
+# ax.set_xlim([min(times), 100])
+# ax.set_xlabel('Time (s)', fontsize = 12)
+# ax.set_ylim([1.5E4, 1E6])
+# ax.set_ylabel('Pressure (Pa)', fontsize = 12)
+# ax.tick_params(labelsize=14)
+# ax.legend(handles=[test_targets, prediction])
+# =============================================================================
 
 # testing: multi-step ahead
 fig, ax = plt.subplots(figsize=(12, 7))
@@ -143,7 +145,7 @@ for i in range(K_test):
     start += N; stop += N
 prediction =  mlines.Line2D([], [], color = red, alpha = 0.7, linewidth = 1, 
                             linestyle = '--', label='Prediction')
-ax.set_xlim([min(times), 100])
+ax.set_xlim([min(times), max(times)])
 ax.set_xlabel('Time (s)', fontsize = 12)
 ax.set_ylim([1.5E4, 1E6])
 ax.set_ylabel('Pressure (Pa)', fontsize = 12)
@@ -152,6 +154,6 @@ ax.legend(handles=[test_targets, prediction], fontsize = 8, loc = 'lower right')
 # =============================================================================
 # ax.axis('off')
 # fig.tight_layout(pad=0)
-# ax.figure.set_size_inches(5.5/2.54, 5.5/2.54)
-# plt.savefig('test_pr.png', dpi = 600)
+# ax.figure.set_size_inches(4.5/2.54, 4.5/2.54)
+# plt.savefig('test_upr.png', dpi = 600)
 # =============================================================================
